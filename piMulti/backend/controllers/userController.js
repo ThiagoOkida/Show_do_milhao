@@ -80,3 +80,47 @@ exports.updateUserScore = async (req, res) => {
         res.status(500).json({ message: 'Erro no servidor' });
     }
 };
+
+// ✅ Listar todos os usuários
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password'); // Oculta a senha
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao buscar usuários' });
+    }
+};
+
+// ✅ Buscar usuário por ID
+exports.getUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao buscar usuário' });
+    }
+};
+
+// ✅ Atualizar usuário por ID
+exports.updateUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
+        if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+        res.json({ message: 'Usuário atualizado com sucesso', user });
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao atualizar usuário' });
+    }
+};
+
+// ✅ Deletar usuário por ID
+exports.deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+        res.json({ message: 'Usuário deletado com sucesso' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao deletar usuário' });
+    }
+};
+

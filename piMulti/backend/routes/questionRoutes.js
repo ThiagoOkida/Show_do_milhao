@@ -1,25 +1,15 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-
 const router = express.Router();
-const prisma = new PrismaClient();
+const Question = require('../models/Question');
 
-// Rota para criar uma nova questão
-router.post('/questions', async (req, res) => {
-    try {
-        const { titulo, descricao, nivel, categoriaId } = req.body;
-        const novaQuestao = await prisma.questao.create({
-            data: {
-                titulo,
-                descricao,
-                nivel,
-                categoriaId,
-            },
-        });
-        res.status(201).json(novaQuestao);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao criar questão.' });
-    }
+// GET /api/questions – Lista todas as perguntas
+router.get('/', async (req, res) => {
+  try {
+    const questions = await Question.find();
+    res.json(questions);
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao buscar perguntas' });
+  }
 });
 
 module.exports = router;
