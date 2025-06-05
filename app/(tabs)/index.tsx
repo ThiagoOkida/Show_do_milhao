@@ -1,75 +1,124 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  SafeAreaView,
+  useWindowDimensions,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function IndexScreen() {
+  const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
 
-export default function HomeScreen() {
+  const isSmallMascot = width < 1253;
+
+  const logoSize = 100;
+  const mascotSize = isSmallMascot ? 250 : 500;
+  const titleSize = 40;
+  const buttonFontSize = 22;
+  const loginFontSize = 18;
+  const buttonWidth = 280;
+  const buttonPadding = 16;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      {/* Logo */}
+      <Image
+        source={require('../../assets/images/logo.png')}
+        style={[styles.logo, { width: logoSize, height: logoSize }]}
+      />
+
+      {/* Botão de login */}
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={() => navigation.navigate('Login')}
+      >
+        <Text style={[styles.loginText, { fontSize: loginFontSize }]}>Login</Text>
+      </TouchableOpacity>
+
+      {/* Título e botões */}
+      <View style={styles.content}>
+        <Text style={[styles.title, { fontSize: titleSize }]}>PoliEducação</Text>
+
+        <TouchableOpacity
+          style={[styles.actionButton, { width: buttonWidth, paddingVertical: buttonPadding }]}
+          onPress={() => navigation.navigate('SelecaoMateria')} // troque 'Quiz' por 'SelecaoMateria' se essa for a tela de jogo
+        >
+          <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>Jogar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, { width: buttonWidth, paddingVertical: buttonPadding }]}
+          onPress={() => navigation.navigate('Ranking')}
+        >
+          <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>Ranking</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Mascote */}
+      <Image
+        source={require('../../assets/images/professor.png')}
+        style={[styles.mascot, { width: mascotSize, height: mascotSize }]}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#16C5D1',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  logo: {
     position: 'absolute',
+    top: 30,
+    left: 40,
+    resizeMode: 'contain',
+    borderRadius: 20,
+  },
+  loginButton: {
+    position: 'absolute',
+    top: 40,
+    right: 40,
+    backgroundColor: '#E6E6E6',
+    borderRadius: 30,
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+  },
+  loginText: {
+    fontWeight: '600',
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 50,
+    fontFamily: 'serif',
+    textAlign: 'center',
+  },
+  actionButton: {
+    backgroundColor: '#F39C12',
+    borderRadius: 30,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  mascot: {
+    position: 'absolute',
+    bottom: 0,
+    left: 30,
+    resizeMode: 'contain',
   },
 });
