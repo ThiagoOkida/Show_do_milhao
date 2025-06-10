@@ -85,3 +85,45 @@ exports.submitAnswer = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+exports.addQuestion = async (req, res) => {
+  const { questionText, correctAnswer, wrongAnswers, knowledgeArea, difficulty } = req.body;
+
+  try {
+    const newQuestion = new Question({
+      questionText,
+      correctAnswer,
+      wrongAnswers,
+      knowledgeArea,
+      difficulty,
+    });
+
+    await newQuestion.save();
+    res.status(201).json({ message: 'Questão adicionada com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao adicionar questão', error: err });
+  }
+};
+
+// Nova função para remover uma questão
+exports.removeQuestion = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await Question.deleteOne({ _id: id });
+    res.status(200).json({ message: 'Questão removida com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao remover questão', error: err });
+  }
+};
+
+// Nova função para filtrar questões por área de conhecimento
+exports.getQuestionsByKnowledgeArea = async (req, res) => {
+  const { knowledgeArea } = req.params;
+
+  try {
+    const questions = await Question.find({ knowledgeArea: knowledgeArea });
+    res.status(200).json(questions);
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao buscar questões', error: err });
+  }
+};
