@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Importar useState
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,13 @@ import {
   SafeAreaView,
   TextInput,
   useWindowDimensions,
-  Alert, // Para exibir mensagens de erro/sucesso
-  ActivityIndicator, // Para mostrar um indicador de carregamento
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import { useAuth } from '@/hooks/authContext'; // ✅ Importa o contexto de autenticação
 
-// Supondo que você tenha uma URL para o seu backend.
-// Substitua pela URL real do seu backend (local ou de produção).
-const API_BASE_URL = 'http://localhost:3000/api'; // Exemplo: seu backend está rodando na porta 5000
+const API_BASE_URL = 'http://localhost:3000/api';
 
 export const unstable_settings = {
   initialRouteName: 'Login',
@@ -24,72 +23,62 @@ export const unstable_settings = {
 export default function Login() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { login } = useAuth(); // ✅ Usa o login do contexto
 
-  // 1. Estados para armazenar email e senha
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false); // Estado para o indicador de carregamento
+  const [loading, setLoading] = useState(false);
 
   const logoSize = width < 400 ? 80 : width < 700 ? 100 : 150;
   const isSmallMascot = width < 1253;
-
   const mascotSize = isSmallMascot ? 250 : 500;
 
-  // 2. Função para lidar com o login
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Erro de Login', 'Por favor, preencha todos os campos.');
       return;
     }
 
-    setLoading(true); // Ativa o indicador de carregamento
+    setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, { // Assumindo rota de login no backend
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
+      console.log('🔍 Dados recebidos do backend:', data);
 
       if (response.ok) {
-        // 4. Tratamento de Sucesso
         Alert.alert('Login Bem-Sucedido', data.message || 'Bem-vindo!');
-        // Se o backend retornar um token ou informações do usuário, salve-as
-        // Exemplo: AsyncStorage.setItem('userToken', data.token);
-        // Exemplo: AsyncStorage.setItem('userInfo', JSON.stringify(data.user));
 
-        // 5. Navegação Condicional
-        // Você precisaria de alguma lógica para determinar se é professor ou aluno
-        // e para qual tela navegar. Isso viria dos dados de 'data.user' do backend.
-        // Por exemplo, se o backend retornar `data.user.isProfessor`:
-        if (data.user && data.user.isProfessor) {
-          router.replace('/HomePageProfessor'); // Navega para a tela do professor
+        if (data.user) {
+          login(data.user); // ✅ Salva o usuário no contexto e localStorage
+        }
+
+        if (data.user?.isProfessor) {
+          router.replace('/HomePageProfessor');
         } else {
-          router.replace('/'); // Navega para a tela do aluno
+          router.replace('/');
         }
       } else {
-        // 4. Tratamento de Falha
         Alert.alert('Erro de Login', data.message || 'Credenciais inválidas.');
       }
     } catch (error) {
       console.error('Erro ao conectar ao servidor:', error);
-      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão.');
+      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor.');
     } finally {
-      setLoading(false); // Desativa o indicador de carregamento
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {/* Oculta o header padrão do expo-router */}
       <Stack.Screen options={{ headerShown: false }} />
 
       <SafeAreaView style={styles.container}>
-        {/* Logo como botão de voltar */}
         <TouchableOpacity onPress={() => router.push('/')} style={styles.logoWrapper}>
           <Image
             source={require('../assets/images/logo.png')}
@@ -97,17 +86,16 @@ export default function Login() {
           />
         </TouchableOpacity>
 
-        {/* Card de login */}
         <View style={styles.card}>
           <Text style={styles.label}>E-mail Poliedro</Text>
           <TextInput
             style={styles.input}
             placeholder="Digite seu e-mail"
             placeholderTextColor="#555"
-            keyboardType="email-address" // Teclado apropriado para e-mail
-            autoCapitalize="none" // Não capitalizar a primeira letra
+            keyboardType="email-address"
+            autoCapitalize="none"
             value={email}
-            onChangeText={setEmail} // Conecta o input ao estado 'email'
+            onChangeText={setEmail}
           />
 
           <Text style={styles.label}>Senha</Text>
@@ -117,16 +105,16 @@ export default function Login() {
             placeholderTextColor="#555"
             secureTextEntry
             value={password}
-            onChangeText={setPassword} // Conecta o input ao estado 'password'
+            onChangeText={setPassword}
           />
 
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={handleLogin} // Chama a função handleLogin ao pressionar o botão
-            disabled={loading} // Desabilita o botão enquanto o carregamento está ativo
+            onPress={handleLogin}
+            disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#000" /> // Mostra o spinner enquanto carrega
+              <ActivityIndicator color="#000" />
             ) : (
               <Text style={styles.loginText}>Login</Text>
             )}

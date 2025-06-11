@@ -101,3 +101,45 @@ exports.getByKnowledgeArea = async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar perguntas.' });
   }
 };
+
+exports.getAllQuestions = async (req, res) => {
+  try {
+    const questions = await Question.find();
+    res.json(questions);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar perguntas.' });
+  }
+};
+
+exports.createQuestion = async (req, res) => {
+  try {
+    const { questionText, correctAnswer, wrongAnswers, knowledgeArea, difficulty } = req.body;
+
+    if (!questionText || !correctAnswer || !wrongAnswers || !knowledgeArea) {
+      return res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
+    }
+
+    const newQuestion = new Question({
+      questionText,
+      correctAnswer,
+      wrongAnswers,
+      knowledgeArea,
+      difficulty: difficulty || 1
+    });
+
+    await newQuestion.save();
+    res.status(201).json({ message: 'Pergunta criada com sucesso!', question: newQuestion });
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao criar pergunta.', error: err.message });
+  }
+};
+
+exports.deleteQuestion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Question.findByIdAndDelete(id);
+    res.json({ message: 'Pergunta deletada com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao deletar pergunta.', error: err.message });
+  }
+};

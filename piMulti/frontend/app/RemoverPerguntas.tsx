@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,73 +7,97 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 
-const perguntasMock = [
-  { id: 'Q.01', texto: 'Pergunta exemplo', alternativas: ['A', 'B', 'C', 'D'] },
-  { id: 'Q.02', texto: 'Pergunta exemplo', alternativas: ['A', 'B', 'C', 'D'] },
-  { id: 'Q.03', texto: 'Pergunta exemplo', alternativas: ['A', 'B', 'C', 'D'] },
-  { id: 'Q.04', texto: 'Pergunta exemplo', alternativas: ['A', 'B', 'C', 'D'] },
-  { id: 'Q.05', texto: 'Pergunta exemplo', alternativas: ['A', 'B', 'C', 'D'] },
-];
+const API_URL = 'http://localhost:3000/api/questions';
 
 export default function RemoverPergunta() {
   const router = useRouter();
+  const [perguntas, setPerguntas] = useState<any[]>([]);
   const [expandida, setExpandida] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandida(prev => (prev === id ? null : id));
   };
 
+  const fetchPerguntas = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setPerguntas(data);
+    } catch (error) {
+      console.error('Erro ao buscar perguntas:', error);
+    }
+  };
+
+  const deletarPergunta = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      Alert.alert('Sucesso', result.message || 'Pergunta removida com sucesso');
+      fetchPerguntas(); // Atualiza lista após deletar
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível remover a pergunta.');
+      console.error('Erro ao deletar:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPerguntas();
+  }, []);
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require('../assets/images/logo.png')}
-          style={styles.logo}
-        />
+        <Image source={require('../assets/images/logo.png')} style={styles.logo} />
 
         <View style={styles.card}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            {perguntasMock.map((pergunta) => (
-              <View key={pergunta.id} style={styles.perguntaBox}>
-                <TouchableOpacity
-                  style={styles.perguntaHeader}
-                  onPress={() => toggleExpand(pergunta.id)}
-                >
-                  <Text style={styles.perguntaId}>{pergunta.id}</Text>
-                  <Text>{expandida === pergunta.id ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
+            {perguntas.map((pergunta, index) => (
+  <View key={pergunta._id} style={styles.perguntaBox}>
+    <TouchableOpacity
+      style={styles.perguntaHeader}
+      onPress={() => toggleExpand(pergunta._id)}
+    >
+      <Text style={styles.perguntaId}>Questão {index + 1}</Text>
+      <Text>{expandida === pergunta._id ? '▲' : '▼'}</Text>
+    </TouchableOpacity>
 
-                {expandida === pergunta.id && (
-                  <View style={styles.perguntaConteudo}>
-                    <View style={styles.perguntaInfo}>
-                      <Text style={styles.perguntaTexto}>Q</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ marginBottom: 8 }}>Alternativas:</Text>
-                        {pergunta.alternativas.map((alt, idx) => (
-                          <Text key={idx}>- {alt}</Text>
-                        ))}
-                      </View>
-                    </View>
-
-                    <TouchableOpacity style={styles.deleteButton}>
-                      <Text style={styles.deleteText}>Apagar questão</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
+    {expandida === pergunta._id && (
+      <View style={styles.perguntaConteudo}>
+        <View style={styles.perguntaInfo}>
+          <Text style={styles.perguntaTexto}>{pergunta.questionText}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ marginBottom: 8 }}>Alternativas:</Text>
+            {pergunta.wrongAnswers?.map((alt: string, idx: number) => (
+              <Text key={idx}>- {alt}</Text>
             ))}
-          </ScrollView>
+            <Text style={{ marginTop: 8, fontWeight: 'bold' }}>
+              Resposta correta: {pergunta.correctAnswer}
+            </Text>
+          </View>
         </View>
 
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.push('/Questoes')}
+          style={styles.deleteButton}
+          onPress={() => deletarPergunta(pergunta._id)}
         >
+          <Text style={styles.deleteText}>Apagar questão</Text>
+        </TouchableOpacity>
+      </View>
+    )}
+  </View>
+))}
+
+          </ScrollView>
+        </View>
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/Questoes')}>
           <Text style={styles.backText}>Voltar</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -127,15 +151,14 @@ const styles = StyleSheet.create({
     borderTopColor: '#bbb',
   },
   perguntaInfo: {
-    flexDirection: 'row',
-    gap: 20,
+    flexDirection: 'column',
+    gap: 8,
     marginBottom: 10,
   },
   perguntaTexto: {
-    fontSize: 48,
+    fontSize: 16,
     fontWeight: 'bold',
-    width: 80,
-    textAlign: 'center',
+    marginBottom: 10,
   },
   deleteButton: {
     backgroundColor: '#e74c3c',

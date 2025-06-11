@@ -9,27 +9,33 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import { useAuth } from '@/hooks/authContext';
 
-export default function IndexScreen() {
+export default function HomePageProfessor() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { user, logout } = useAuth();
 
   const isSmallMascot = width < 1253;
   const mascotSize = isSmallMascot ? 250 : 500;
 
-  // Simula que o usuário logado é professor
-  const isProfessor = true;
-
-  // Responsividade
   const titleSize = 48;
   const buttonFontSize = 24;
   const loginFontSize = 18;
   const buttonPadding = width < 400 ? 12 : 18;
 
-  // Larguras específicas para cada botão
   const jogarButtonWidth = width * 0.6;
   const rankingButtonWidth = width * 0.5;
   const questoesButtonWidth = width * 0.4;
+
+  const handleLoginLogout = () => {
+    if (user) {
+      logout();
+      router.replace('/'); // volta para a página inicial
+    } else {
+      router.push('/Login');
+    }
+  };
 
   return (
     <>
@@ -42,12 +48,23 @@ export default function IndexScreen() {
           style={[styles.logo, { width: 125, height: 125 }]}
         />
 
-        {/* Botão de login */}
+        {/* Botão de login/logout */}
         <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => router.push('/Login')}
+          style={[
+            styles.loginButton,
+            user && { backgroundColor: '#e74c3c' }, // vermelho se logado
+          ]}
+          onPress={handleLoginLogout}
         >
-          <Text style={[styles.loginText, { fontSize: loginFontSize }]}>Login</Text>
+          <Text
+            style={[
+              styles.loginText,
+              { fontSize: loginFontSize },
+              user && { color: '#fff' }, // branco se logado
+            ]}
+          >
+            {user ? 'Logout' : 'Login'}
+          </Text>
         </TouchableOpacity>
 
         {/* Título e botões */}
@@ -68,14 +85,12 @@ export default function IndexScreen() {
             <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>Ranking</Text>
           </TouchableOpacity>
 
-          {isProfessor && (
-            <TouchableOpacity
-              style={[styles.actionButton, { width: questoesButtonWidth, paddingVertical: buttonPadding }]}
-              onPress={() => router.push('/Questoes')}
-            >
-              <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>Questões</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={[styles.actionButton, { width: questoesButtonWidth, paddingVertical: buttonPadding }]}
+            onPress={() => router.push('/Questoes')}
+          >
+            <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>Questões</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Mascote */}
@@ -113,6 +128,7 @@ const styles = StyleSheet.create({
   },
   loginText: {
     fontWeight: '600',
+    color: '#000', // cor padrão (preto)
   },
   content: {
     alignItems: 'center',

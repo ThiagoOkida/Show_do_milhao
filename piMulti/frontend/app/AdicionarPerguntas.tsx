@@ -7,61 +7,109 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
+  Alert,
+  ScrollView,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 
+const API_URL = 'http://localhost:3000/api/questions';
+
 export default function AdicionarPergunta() {
   const router = useRouter();
-  const [categoria, setCategoria] = useState('');
+  const [questionText, setQuestionText] = useState('');
+  const [correctAnswer, setCorrectAnswer] = useState('');
+  const [wrongAnswers, setWrongAnswers] = useState(['', '', '']);
+  const [knowledgeArea, setKnowledgeArea] = useState('');
+
+  const handleWrongAnswerChange = (index: number, value: string) => {
+    const newAnswers = [...wrongAnswers];
+    newAnswers[index] = value;
+    setWrongAnswers(newAnswers);
+  };
+
+  const handleSubmit = async () => {
+    if (!questionText || !correctAnswer || wrongAnswers.some(a => !a) || !knowledgeArea) {
+      Alert.alert('Erro', 'Preencha todos os campos corretamente.');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionText,
+          correctAnswer,
+          wrongAnswers,
+          knowledgeArea,
+          difficulty: 1
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert('Sucesso', 'Pergunta adicionada com sucesso!');
+        setQuestionText('');
+        setCorrectAnswer('');
+        setWrongAnswers(['', '', '']);
+        setKnowledgeArea('');
+      } else {
+        Alert.alert('Erro', data.message || 'Erro ao adicionar pergunta.');
+      }
+    } catch (err) {
+      Alert.alert('Erro', 'Erro de conexão com o servidor.');
+    }
+  };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require('../assets/images/logo.png')}
-          style={styles.logo}
-        />
+        <Image source={require('../assets/images/logo.png')} style={styles.logo} />
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Questão:</Text>
-          <TextInput style={styles.input} />
+        <ScrollView style={{ width: '85%' }}>
+          <View style={styles.card}>
+            <Text style={styles.label}>Questão:</Text>
+            <TextInput style={styles.input} value={questionText} onChangeText={setQuestionText} />
 
-          <Text style={styles.label}>Resposta:</Text>
-          <TextInput style={styles.input} />
+            <Text style={styles.label}>Resposta Correta:</Text>
+            <TextInput style={styles.input} value={correctAnswer} onChangeText={setCorrectAnswer} />
 
-          <Text style={styles.label}>Alternativas:</Text>
-          {[...Array(4)].map((_, index) => (
-            <TextInput key={index} style={styles.input} />
-          ))}
+            <Text style={styles.label}>Alternativas Incorretas:</Text>
+            {wrongAnswers.map((alt, idx) => (
+              <TextInput
+                key={idx}
+                style={styles.input}
+                value={alt}
+                onChangeText={(text) => handleWrongAnswerChange(idx, text)}
+              />
+            ))}
 
-          <View style={styles.radioGroup}>
-            {['Exatas', 'Humanas', 'Biolog.', 'Linguagens'].map((cat) => (
+            <Text style={styles.label}>Categoria:</Text>
+            {['E', 'H', 'B', 'L'].map((cat) => (
               <TouchableOpacity
                 key={cat}
-                onPress={() => setCategoria(cat)}
+                onPress={() => setKnowledgeArea(cat)}
                 style={styles.radioOption}
               >
                 <View style={styles.radioCircle}>
-                  {categoria === cat && <View style={styles.radioSelected} />}
+                  {knowledgeArea === cat && <View style={styles.radioSelected} />}
                 </View>
-                <Text style={styles.radioLabel}>{cat}</Text>
+                <Text style={styles.radioLabel}>
+                  {cat === 'E' ? 'Exatas' : cat === 'H' ? 'Humanas' : cat === 'B' ? 'Biológicas' : 'Linguagens'}
+                </Text>
               </TouchableOpacity>
             ))}
+
+            <TouchableOpacity style={styles.sendButton} onPress={handleSubmit}>
+              <Text style={styles.sendText}>Enviar</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.sendButton}>
-            <Text style={styles.sendText}>Enviar</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/Questoes')}>
+            <Text style={styles.backText}>Voltar</Text>
           </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.push('/Questoes')}
-        >
-          <Text style={styles.backText}>Voltar</Text>
-        </TouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
     </>
   );
@@ -72,7 +120,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#16C5D1',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   logo: {
     position: 'absolute',
@@ -86,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 30,
     borderRadius: 30,
-    width: '85%',
+    marginTop: 140,
     marginBottom: 30,
   },
   label: {
@@ -100,17 +147,10 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
   },
-  radioGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-    marginBottom: 20,
-    flexWrap: 'wrap',
-  },
   radioOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 10,
   },
   radioCircle: {
     height: 18,
@@ -137,6 +177,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     borderRadius: 20,
     alignSelf: 'flex-end',
+    marginTop: 20,
   },
   sendText: {
     color: '#000',
@@ -148,6 +189,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 40,
     alignSelf: 'center',
+    marginBottom: 30,
   },
   backText: {
     fontWeight: '600',

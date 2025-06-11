@@ -9,41 +9,54 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import { useAuth } from '@/hooks/authContext'; // 👈 Importa o contexto de autenticação
 
 export default function IndexScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { user, logout } = useAuth();
+
+  console.log('Usuário atual:', user); // 🔍 Debug: verificar se o contexto está funcionando
 
   const isSmallMascot = width < 1253;
   const mascotSize = isSmallMascot ? 250 : 500;
 
-  // Responsividade
   const titleSize = 48;
   const buttonFontSize = 24;
   const loginFontSize = 18;
   const buttonPadding = width < 400 ? 12 : 18;
 
-  // Larguras específicas para cada botão
-  const jogarButtonWidth = width * 0.6; 
-  const rankingButtonWidth = width * 0.5; 
+  const jogarButtonWidth = width * 0.6;
+  const rankingButtonWidth = width * 0.5;
+
+  const handleLoginLogout = () => {
+    if (user) {
+      logout();
+    } else {
+      router.push('/Login');
+    }
+  };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <SafeAreaView style={styles.container}>
+      {/* ✅ Força re-render quando o usuário muda */}
+      <SafeAreaView key={user?.email || 'guest'} style={styles.container}>
         {/* Logo */}
         <Image
           source={require('../assets/images/logo.png')}
           style={[styles.logo, { width: 125, height: 125 }]}
         />
 
-        {/* Botão de login */}
+        {/* Botão de login/logout */}
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => router.push('/Login')}
+          onPress={handleLoginLogout}
         >
-          <Text style={[styles.loginText, { fontSize: loginFontSize }]}>Login</Text>
+          <Text style={[styles.loginText, { fontSize: loginFontSize }]}>
+            {user ? 'Logout' : 'Login'}
+          </Text>
         </TouchableOpacity>
 
         {/* Título e botões */}

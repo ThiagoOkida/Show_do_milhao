@@ -129,7 +129,7 @@ export default function Jogo() {
           </Text>
           <Text style={styles.finalText}>
             {errou
-              ? `Você ficou com R$ ${premioCheckpoint.toLocaleString("pt-BR")} (checkpoint)`
+              ? `Você ficou com R$ ${premioCheckpoint.toLocaleString("pt-BR")} `
               : `Você ganhou R$ ${premioFinal.toLocaleString("pt-BR")}`}
           </Text>
           {/* Botão de reiniciar ou ir para ranking */}
