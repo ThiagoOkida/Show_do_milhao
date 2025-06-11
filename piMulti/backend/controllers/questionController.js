@@ -85,3 +85,19 @@ exports.submitAnswer = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.getByKnowledgeArea = async (req, res) => {
+  try {
+    const { knowledgeArea, knowledgeAreas } = req.body;
+    let filter = {};
+    if (knowledgeAreas && Array.isArray(knowledgeAreas)) {
+      filter.knowledgeArea = { $in: knowledgeAreas };
+    } else if (knowledgeArea) {
+      filter.knowledgeArea = knowledgeArea;
+    }
+    const questions = await Question.find(filter);
+    res.json(questions);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar perguntas.' });
+  }
+};

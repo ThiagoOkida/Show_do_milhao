@@ -1,15 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const Question = require('../models/Question');
+const questionController = require('../controllers/questionController');
 
-// GET /api/questions – Lista todas as perguntas
-router.get('/', async (req, res) => {
-  try {
-    const questions = await Question.find();
-    res.json(questions);
-  } catch (err) {
-    res.status(500).json({ message: 'Erro ao buscar perguntas' });
-  }
-});
+// Para buscar perguntas por área
+router.post('/by-knowledge-area', questionController.getByKnowledgeArea);
+
+// (Aqui pode adicionar outras rotas, como getNextQuestion, submitAnswer...)
+router.get('/next', questionController.getNextQuestion);
+router.post('/submit', questionController.submitAnswer);
 
 module.exports = router;

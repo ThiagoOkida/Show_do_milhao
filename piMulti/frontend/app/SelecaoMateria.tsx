@@ -16,10 +16,10 @@ export default function SelecaoMateria() {
   const [selecionadas, setSelecionadas] = useState<string[]>([]);
 
   const materias = [
-    { id: 'exatas', nome: 'Exatas', cor: '#F39C12', imagem: require('../assets/images/exatas.png') },
-    { id: 'linguagens', nome: 'Linguagens', cor: '#be6ee0', imagem: require('../assets/images/linguagens.png') },
-    { id: 'biologicas', nome: 'Biológicas', cor: '#7ED321', imagem: require('../assets/images/biologicas.png') },
-    { id: 'humanas', nome: 'Humanas', cor: '#a38b52', imagem: require('../assets/images/humanas.png') },
+    { id: 'E', nome: 'Exatas', cor: '#F39C12', imagem: require('../assets/images/exatas.png') },
+    { id: 'L', nome: 'Linguagens', cor: '#be6ee0', imagem: require('../assets/images/linguagens.png') },
+    { id: 'B', nome: 'Biológicas', cor: '#7ED321', imagem: require('../assets/images/biologicas.png') },
+    { id: 'H', nome: 'Humanas', cor: '#a38b52', imagem: require('../assets/images/humanas.png') },
   ];
 
   const toggleMateria = (id: string) => {
@@ -28,13 +28,37 @@ export default function SelecaoMateria() {
     );
   };
 
-  const handlePronto = () => {
-    if (selecionadas.length === 0) {
-      Alert.alert('Selecione pelo menos uma matéria para continuar.');
-      return;
-    }
-    router.push('/Jogo');
-  };
+  // ...imports e o restante do componente
+
+const handlePronto = async () => {
+  if (selecionadas.length === 0) {
+    Alert.alert('Selecione pelo menos uma matéria para continuar.');
+    return;
+  }
+  try {
+    const response = await fetch('http://localhost:3000/api/questions/by-knowledge-area', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ knowledgeAreas: selecionadas }),
+    });
+    if (!response.ok) throw new Error('Erro ao buscar perguntas');
+    const perguntas = await response.json();
+    router.push({ pathname: '/Jogo', params: { perguntas: JSON.stringify(perguntas) } });
+  } catch (error) {
+  let errorMsg = 'Erro ao buscar perguntas!';
+  if (error instanceof Error) {
+    errorMsg = error.message;
+  }
+  Alert.alert('Erro ao buscar perguntas!', errorMsg);
+}
+
+};
+
+// ...e no botão:
+<TouchableOpacity style={styles.botaoPronto} onPress={handlePronto}>
+  <Text style={styles.textoPronto}>Pronto!</Text>
+</TouchableOpacity>
+
 
   return (
     <>
