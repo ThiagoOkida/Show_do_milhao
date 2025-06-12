@@ -46,12 +46,24 @@ exports.loginUser = async (req, res) => {
         if (!isMatch) return res.status(401).json({ message: 'Credenciais inválidas' });
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1d' });
+        console.log('Token gerado:', token);
 
-        res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+        // ADICIONE os campos esperados pelo front:
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                isProfessor: user.isProfessor,
+                score: user.score
+            }
+        });
     } catch (err) {
         res.status(500).json({ message: 'Erro no servidor' });
     }
 };
+
 
 // Retorna os dados do usuário logado (requere middleware de autenticação)
 exports.getUserProfile = async (req, res) => {
@@ -67,13 +79,16 @@ exports.getUserProfile = async (req, res) => {
 // Atualiza a pontuação do usuário após o quiz (requere middleware de autenticação)
 exports.updateUserScore = async (req, res) => {
     const { score } = req.body;
+    console.log("Controller: req.user =", req.user);
 
     try {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
 
+        console.log('Pontuação recebida antes:', score);
         user.score = score;
         await user.save();
+        console.log('Pontuação recebida depois:', score);
 
         res.json({ message: 'Pontuação atualizada', score: user.score });
     } catch (err) {
@@ -123,4 +138,17 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: 'Erro ao deletar usuário' });
     }
 };
+
+// Ranking dos jogadores, ordenando por score decrescente
+exports.getRanking = async (req, res) => {
+  try {
+    const ranking = await User.find({}, 'email score') // Retorna apenas email e score
+      .sort({ score: -1 }) // Do maior pro menor
+      .limit(10); // Top 10, se quiser
+    res.json(ranking);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar ranking.' });
+  }
+};
+
 

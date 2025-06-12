@@ -1,15 +1,15 @@
+import { useAuth } from '@/app/hooks/authContext'; // 👈 Importa o contexto de autenticação
+import { Stack, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  SafeAreaView,
-  useWindowDimensions,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
-import { useAuth } from '@/hooks/authContext'; // 👈 Importa o contexto de autenticação
 
 export default function IndexScreen() {
   const router = useRouter();

@@ -5,8 +5,8 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { AuthProvider } from '@/hooks/authContext';
+import { AuthProvider } from '@/app/hooks/authContext';
+import { useColorScheme } from '@/app/hooks/useColorScheme';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

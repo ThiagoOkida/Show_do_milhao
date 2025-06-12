@@ -1,30 +1,24 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
   Dimensions,
+  Alert,
+  Image,
 } from "react-native";
 import { useRouter, Stack, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Progressão de prêmios
 const PROGRESSAO = [
-  0,
-  1000,
-  5000,
-  10000,
-  50000, // checkpoint 1
-  100000,
-  300000,
-  500000,
-  1000000, // checkpoint 2
+  0, 1000, 5000, 10000, 50000, 100000, 300000, 500000, 1000000,
 ];
-const CHECKPOINTS = [0, 3, 6]; // Índices de checkpoint (questão 0, 4 e 8)
+const CHECKPOINTS = [0, 3, 6];
 
-// Função para encontrar último checkpoint atingido
+const MAX_ALTERNATIVAS = 4;
+
 function getLastCheckpoint(idx: number) {
   let last = 0;
   for (const cp of CHECKPOINTS) {
@@ -32,6 +26,28 @@ function getLastCheckpoint(idx: number) {
     else break;
   }
   return last;
+}
+
+// --- FUNÇÃO para atualizar score do usuário no banco ---
+async function atualizarPontuacao(score: number) {
+  try {
+    const token = localStorage.getItem("token");
+    console.log('DEBUG: Chamou atualizarPontuacao com score:', score);
+    console.log('DEBUG: Token recuperado no localStorage:', token);
+    if (!token) return;
+    await fetch('http://localhost:3000/api/users/score', {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ score }),
+    });
+    console.log('DEBUG: Fetch PUT enviado com score:', score);
+  } catch (err) {
+    console.error('Erro ao atualizar pontuação:', err);
+    
+  }
 }
 
 export default function Jogo() {
@@ -49,19 +65,22 @@ export default function Jogo() {
     listaPerguntas = perguntas;
   }
 
-  // Estados do jogo
   const [indice, setIndice] = useState(0);
   const [acertos, setAcertos] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [respostaSelecionada, setRespostaSelecionada] = useState<string | null>(null);
   const [respostaCorreta, setRespostaCorreta] = useState<boolean | null>(null);
   const [errou, setErrou] = useState(false);
+  const [alternativasVisiveis, setAlternativasVisiveis] = useState<string[]>([]);
+  const [alternativasEliminadas, setAlternativasEliminadas] = useState<string[]>([]);
 
-  // Mantém alternativas fixas para cada pergunta (não embaralha novamente)
+  // Dicas restantes
+  const [pulosRestantes, setPulosRestantes] = useState(2);
+  const [cartasRestantes, setCartasRestantes] = useState(1);
+
   const alternativasFixas = useMemo(() => {
     return listaPerguntas.map((pergunta) => {
       const alts = [pergunta.correctAnswer, ...pergunta.wrongAnswers];
-      // Embaralha UMA vez ao iniciar o jogo
       for (let i = alts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [alts[i], alts[j]] = [alts[j], alts[i]];
@@ -69,6 +88,23 @@ export default function Jogo() {
       return alts;
     });
   }, [perguntas]);
+
+  useEffect(() => {
+    if (alternativasFixas[indice]) {
+      setAlternativasVisiveis(alternativasFixas[indice]);
+      setAlternativasEliminadas([]); // limpa eliminadas ao trocar de pergunta
+    }
+  }, [indice, alternativasFixas]);
+
+  // Atualiza o score do jogador ao finalizar
+  useEffect(() => {
+    if (showResult) {
+      console.log('DEBUG: useEffect chamado após finalizar quiz!');
+      const premioFinal = errou ? PROGRESSAO[getLastCheckpoint(indice)] : PROGRESSAO[indice];
+      atualizarPontuacao(premioFinal);
+    }
+    // eslint-disable-next-line
+  }, [showResult]);
 
   if (!listaPerguntas.length) {
     return (
@@ -79,15 +115,18 @@ export default function Jogo() {
   }
 
   const perguntaAtual = listaPerguntas[indice];
-  const alternativas = alternativasFixas[indice];
+  const alternativas = alternativasVisiveis;
 
-  // Calcula prêmio atual e checkpoints
   const premioAtual = PROGRESSAO[indice];
   const idxCheckpoint = getLastCheckpoint(indice);
   const premioCheckpoint = PROGRESSAO[idxCheckpoint];
 
+  // Última pergunta?
+  const isUltimaPergunta = indice === listaPerguntas.length - 1;
+
   function handleResponder(alternativa: string) {
     if (respostaSelecionada !== null) return;
+    if (alternativasEliminadas.includes(alternativa)) return;
     setRespostaSelecionada(alternativa);
     const correta = alternativa === perguntaAtual.correctAnswer;
     setRespostaCorreta(correta);
@@ -109,13 +148,40 @@ export default function Jogo() {
     }
   }
 
-  // Fim de jogo (encerra ao errar OU ao finalizar todas)
+  function handlePular() {
+    if (respostaSelecionada !== null) return;
+    if (isUltimaPergunta) return; // Não pode pular na última
+    if (pulosRestantes <= 0) return;
+    setPulosRestantes(pulosRestantes - 1);
+    handleProxima();
+  }
+
+  function handleCartas() {
+    if (respostaSelecionada !== null) return;
+    if (isUltimaPergunta) return; // Não pode usar na última
+    if (cartasRestantes <= 0) return;
+    const incorretas = alternativas.filter(
+      (alt) =>
+        alt !== perguntaAtual.correctAnswer &&
+        !alternativasEliminadas.includes(alt)
+    );
+    if (incorretas.length === 0) return;
+    const qtdRemover = Math.min(
+      Math.floor(Math.random() * (incorretas.length)) + 1,
+      incorretas.length
+    );
+    const removidas = incorretas
+      .sort(() => 0.5 - Math.random())
+      .slice(0, qtdRemover);
+    setAlternativasEliminadas((prev) => [...prev, ...removidas]);
+    setCartasRestantes(cartasRestantes - 1);
+  }
+
   if (showResult) {
-    // Calcula o prêmio final
     const premioFinal = errou ? premioCheckpoint : PROGRESSAO[indice];
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
+        <View style={styles.centeredBar}>
           <Text style={styles.premioInfo}>
             Prêmio final: R$ {premioFinal.toLocaleString("pt-BR")}
           </Text>
@@ -132,7 +198,6 @@ export default function Jogo() {
               ? `Você ficou com R$ ${premioCheckpoint.toLocaleString("pt-BR")} `
               : `Você ganhou R$ ${premioFinal.toLocaleString("pt-BR")}`}
           </Text>
-          {/* Botão de reiniciar ou ir para ranking */}
           <TouchableOpacity
             style={[styles.proximaBtn, { marginTop: 32 }]}
             onPress={() => router.push("/")}
@@ -148,8 +213,7 @@ export default function Jogo() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container}>
-        {/* Barra superior: prêmio */}
-        <View style={styles.topBar}>
+        <View style={styles.centeredBar}>
           <Text style={styles.premioInfo}>
             Prêmio atual: R$ {premioAtual.toLocaleString("pt-BR")}
           </Text>
@@ -157,38 +221,92 @@ export default function Jogo() {
             Último checkpoint: R$ {premioCheckpoint.toLocaleString("pt-BR")}
           </Text>
         </View>
+
         <View style={styles.quizWrapper}>
           <View style={styles.enunciadoBox}>
             <Text style={styles.enunciadoTexto}>
               {perguntaAtual.questionText}
             </Text>
           </View>
-          {/* Alternativas */}
-          <View style={styles.alternativasContainer}>
-            {alternativas.map((alt: string, idx: number) => {
-              let backgroundColor = "#E5E5E5";
-              if (respostaSelecionada) {
-                if (alt === respostaSelecionada) {
-                  backgroundColor = respostaCorreta
-                    ? "#7ED321"
-                    : "#FF5C5C";
-                } else if (!respostaCorreta && alt === perguntaAtual.correctAnswer) {
-                  backgroundColor = "#7ED321";
+
+          {/* Bloco de alternativas sempre ocupa altura máxima */}
+          <View style={styles.alternativasBloco}>
+            {[...Array(MAX_ALTERNATIVAS)].map((_, i) => {
+              const alt = alternativas[i];
+              if (alt) {
+                let backgroundColor = "#E5E5E5";
+                let disabled = false;
+                if (alternativasEliminadas.includes(alt)) {
+                  backgroundColor = "#FF5C5C"; // Eliminada (cartas)
+                  disabled = true;
+                } else if (respostaSelecionada) {
+                  if (alt === respostaSelecionada) {
+                    backgroundColor = respostaCorreta ? "#7ED321" : "#FF5C5C";
+                  } else if (
+                    !respostaCorreta &&
+                    alt === perguntaAtual.correctAnswer
+                  ) {
+                    backgroundColor = "#7ED321";
+                  }
+                  disabled = true;
                 }
+                return (
+                  <TouchableOpacity
+                    key={alt + i}
+                    style={[styles.alternativa, { backgroundColor }]}
+                    onPress={() => handleResponder(alt)}
+                    disabled={disabled}
+                  >
+                    <Text style={styles.textoAlternativa}>{alt}</Text>
+                  </TouchableOpacity>
+                );
               }
+              // Slot vazio para manter layout
               return (
-                <TouchableOpacity
-                  key={alt + idx}
-                  style={[styles.alternativa, { backgroundColor }]}
-                  onPress={() => handleResponder(alt)}
-                  disabled={respostaSelecionada !== null}
-                >
-                  <Text style={styles.textoAlternativa}>{alt}</Text>
-                </TouchableOpacity>
+                <View key={"vazio_" + i} style={styles.alternativaVazia} />
               );
             })}
           </View>
-          {/* Feedback e botão de próxima */}
+
+          {/* Lifelines abaixo do bloco de alternativas */}
+          {!respostaSelecionada && (
+            <View style={styles.lifelinesRow}>
+              <TouchableOpacity
+                onPress={handlePular}
+                style={[
+                  styles.lifelineBtn,
+                  (isUltimaPergunta || pulosRestantes === 0) && { opacity: 0.5 }
+                ]}
+                disabled={isUltimaPergunta || pulosRestantes === 0}
+              >
+                <Image
+                  source={require("../assets/images/pular.png")}
+                  style={styles.lifelineIcon}
+                />
+                <Text style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                  {pulosRestantes}x
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCartas}
+                style={[
+                  styles.lifelineBtn,
+                  (isUltimaPergunta || cartasRestantes === 0) && { opacity: 0.5 }
+                ]}
+                disabled={isUltimaPergunta || cartasRestantes === 0}
+              >
+                <Image
+                  source={require("../assets/images/carta.png")}
+                  style={styles.lifelineIcon}
+                />
+                <Text style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                  {cartasRestantes}x
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Feedback e botão de próxima/finalizar */}
           {respostaSelecionada && !errou && (
             <View style={{ alignItems: "center", marginTop: 24 }}>
               <Text style={styles.feedbackMsg}>
@@ -207,7 +325,9 @@ export default function Jogo() {
             </View>
           )}
           {respostaSelecionada && errou && (
-            <Text style={styles.feedbackMsg}>Errado! Você ficou com o valor do último checkpoint.</Text>
+            <Text style={styles.feedbackMsg}>
+              Errado! Você ficou com o valor do último checkpoint.
+            </Text>
           )}
         </View>
       </SafeAreaView>
@@ -215,7 +335,7 @@ export default function Jogo() {
   );
 }
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -224,27 +344,24 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "flex-end",
-    paddingHorizontal: width > 900 ? 60 : 20,
-    paddingTop: 20,
-    gap: 24,
+  centeredBar: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: width > 900 ? 36 : 16,
+    marginBottom: width > 900 ? 36 : 18,
   },
   premioInfo: {
-    fontSize: width > 900 ? 22 : 16,
+    fontSize: width > 900 ? 26 : 18,
     color: "#000",
     fontWeight: "bold",
-    textAlign: "right",
+    textAlign: "center",
   },
   checkpointText: {
-    fontSize: width > 900 ? 16 : 13,
+    fontSize: width > 900 ? 18 : 13,
     color: "#444",
     fontStyle: "italic",
-    textAlign: "right",
-    marginLeft: 16,
-    marginTop: 3,
+    textAlign: "center",
+    marginTop: 6,
   },
   quizWrapper: {
     flex: 1,
@@ -259,7 +376,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E5E5",
     borderRadius: 40,
     padding: width > 900 ? 36 : 22,
-    marginBottom: 28,
+    marginBottom: 12,
     alignItems: "center",
     alignSelf: "center",
   },
@@ -270,19 +387,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "sans-serif",
   },
-  alternativasContainer: {
+  alternativasBloco: {
     width: width > 900 ? "50%" : "90%",
     minWidth: 320,
+    alignSelf: "center",
+    marginTop: 8,
+    marginBottom: 0,
+    justifyContent: "center",
+    alignItems: "stretch",
+    minHeight: (width > 900 ? 78 : 58) * MAX_ALTERNATIVAS + 16,
   },
   alternativa: {
     borderRadius: 30,
     paddingVertical: width > 900 ? 26 : 16,
     paddingHorizontal: 20,
     marginBottom: 20,
-    minHeight: 48,
+    minHeight: width > 900 ? 58 : 48,
     justifyContent: "center",
     alignItems: "flex-start",
     backgroundColor: "#E5E5E5",
+    width: "100%",
+  },
+  alternativaVazia: {
+    borderRadius: 30,
+    marginBottom: 20,
+    minHeight: width > 900 ? 58 : 48,
+    backgroundColor: "transparent",
     width: "100%",
   },
   textoAlternativa: {
@@ -322,5 +452,26 @@ const styles = StyleSheet.create({
     marginTop: 30,
     color: "#000",
     textAlign: "center",
+  },
+  lifelinesRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 16,
+  },
+  lifelineBtn: {
+    alignItems: "center",
+    marginHorizontal: 10,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    elevation: 2,
+  },
+  lifelineIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: "contain",
   },
 });

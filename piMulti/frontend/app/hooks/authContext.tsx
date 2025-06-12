@@ -7,10 +7,13 @@ import React, {
 } from 'react';
 
 type User = {
+  id: string;
   email: string;
+  name: string;
   isProfessor: boolean;
   score: number;
 };
+
 
 type AuthContextType = {
   user: User | null;
@@ -64,3 +67,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+export default AuthProvider;
