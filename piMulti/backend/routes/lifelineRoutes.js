@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// 📌 Rota para "Pular a pergunta"
+
 router.get('/pular', (req, res) => {
   res.json({
     lifeline: 'pular',
@@ -10,7 +10,6 @@ router.get('/pular', (req, res) => {
   });
 });
 
-// 📌 Rota para "Cartas" (ex: eliminar 2 alternativas erradas)
 router.get('/cartas', (req, res) => {
   res.json({
     lifeline: 'cartas',
@@ -20,7 +19,7 @@ router.get('/cartas', (req, res) => {
   });
 });
 
-// 📌 Rota para "Universitários"
+
 router.get('/universitarios', (req, res) => {
   res.json({
     lifeline: 'universitarios',

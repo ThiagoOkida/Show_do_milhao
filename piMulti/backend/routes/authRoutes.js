@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController'); // Importa o controlador de autenticação
+const userController = require('../controllers/userController'); 
 
-router.post('/login', userController.loginUser); // Define a rota POST para /login
+router.post('/login', userController.loginUser); 
 
 module.exports = router;

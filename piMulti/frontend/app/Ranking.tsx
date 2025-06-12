@@ -26,14 +26,12 @@ export default function Ranking() {
         const response = await fetch('http://localhost:3000/api/users/ranking');
         const data = await response.json();
 
-        // LOG para debug
         console.log("Ranking recebido do backend:", data);
 
-        // Proteção: só seta se for array
         setRanking(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Erro ao buscar ranking:', error);
-        setRanking([]); // garante array mesmo em erro
+        setRanking([]);
       } finally {
         setLoading(false);
       }

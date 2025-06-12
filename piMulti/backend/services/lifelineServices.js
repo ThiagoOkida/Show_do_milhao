@@ -5,7 +5,6 @@ function removeWrongAnswers(correctAnswer, options) {
     return result;
 }
 
-// Simula um amigo dando a resposta (80% de chance de estar certo)
 function askFriend(correctAnswer, options) {
     const chance = Math.random();
     return chance < 0.8 ? correctAnswer : options[Math.floor(Math.random() * options.length)];

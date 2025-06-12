@@ -1,7 +1,6 @@
 const Question = require('../models/Question');
 const { removeWrongAnswers, askFriend } = require('../services/lifelineService');
 
-// POST /lifeline/remove/:id
 exports.useRemoveHelp = async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
@@ -14,7 +13,6 @@ exports.useRemoveHelp = async (req, res) => {
     }
 };
 
-// POST /lifeline/ask/:id
 exports.useAskHelp = async (req, res) => {
     try {
         const question = await Question.findById(req.params.id);
@@ -27,7 +25,6 @@ exports.useAskHelp = async (req, res) => {
     }
 };
 
-// POST /lifeline/skip/:id (simplesmente retorna próxima questão — controle pode ser no frontend)
 exports.useSkip = (req, res) => {
     res.json({ message: 'Questão pulada. Próxima pergunta deve ser carregada.' });
 };

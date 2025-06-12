@@ -28,7 +28,6 @@ export default function SelecaoMateria() {
     );
   };
 
-  // ...imports e o restante do componente
 
 const handlePronto = async () => {
   if (selecionadas.length === 0) {
@@ -54,7 +53,6 @@ const handlePronto = async () => {
 
 };
 
-// ...e no botão:
 <TouchableOpacity style={styles.botaoPronto} onPress={handlePronto}>
   <Text style={styles.textoPronto}>Pronto!</Text>
 </TouchableOpacity>

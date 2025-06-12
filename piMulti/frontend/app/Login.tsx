@@ -1,4 +1,4 @@
-import { useAuth } from "@/app/hooks/authContext"; // ✅ Importa o contexto de autenticação
+import { useAuth } from "@/app/hooks/authContext"; 
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -53,7 +53,6 @@ export default function Login() {
       if (response.ok) {
         Alert.alert("Login Bem-Sucedido", data.message || "Bem-vindo!");
 
-        // SALVE O TOKEN:
         if (data.token) {
           localStorage.setItem("token", data.token);
           console.log(
@@ -63,7 +62,7 @@ export default function Login() {
         }
 
         if (data.user) {
-          login(data.user); // salva o user no contexto
+          login(data.user); 
         }
 
         if (data.user?.isProfessor) {

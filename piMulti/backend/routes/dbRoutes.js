@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Question = require('../models/Question');
 
-// GET para listar todos os usuários
+
 router.get('/usuarios', async (req, res) => {
   try {
     const usuarios = await User.find();
@@ -14,7 +14,7 @@ router.get('/usuarios', async (req, res) => {
   }
 });
 
-// GET para listar todas as perguntas
+
 router.get('/perguntas', async (req, res) => {
   try {
     const perguntas = await Question.find();

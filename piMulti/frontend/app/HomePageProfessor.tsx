@@ -31,7 +31,7 @@ export default function HomePageProfessor() {
   const handleLoginLogout = () => {
     if (user) {
       logout();
-      router.replace('/'); // volta para a página inicial
+      router.replace('/'); 
     } else {
       router.push('/Login');
     }
@@ -52,7 +52,7 @@ export default function HomePageProfessor() {
         <TouchableOpacity
           style={[
             styles.loginButton,
-            user && { backgroundColor: '#e74c3c' }, // vermelho se logado
+            user && { backgroundColor: '#e74c3c' }, 
           ]}
           onPress={handleLoginLogout}
         >
@@ -60,7 +60,7 @@ export default function HomePageProfessor() {
             style={[
               styles.loginText,
               { fontSize: loginFontSize },
-              user && { color: '#fff' }, // branco se logado
+              user && { color: '#fff' }, 
             ]}
           >
             {user ? 'Logout' : 'Login'}
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   loginText: {
     fontWeight: '600',
-    color: '#000', // cor padrão (preto)
+    color: '#000', 
   },
   content: {
     alignItems: 'center',

@@ -9,7 +9,6 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: 'Credenciais inválidas' });
 
-    // Aqui a senha é comparada usando bcrypt (correto!)
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Credenciais inválidas' });
 

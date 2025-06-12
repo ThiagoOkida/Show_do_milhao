@@ -1,13 +1,11 @@
 const Question = require('../models/Question'); 
 const User = require('../models/User'); 
 
-// Valores dos checkpoints e progressão financeira
 const PROGRESSAO = [0, 1000, 5000, 10000, 50000, 100000, 300000, 500000, 1000000];
 const CHECKPOINTS = [0, 3, 6, 9]; 
 
 exports.getNextQuestion = async (req, res) => {
     try {
-        // Busca uma pergunta aleatória que o usuário ainda não respondeu
         const userId = req.user.id;
         const user = await User.findById(userId);
         const answeredIds = user.answeredQuestions || [];
@@ -31,7 +29,6 @@ exports.submitAnswer = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        // Verifica se já respondeu
         if (user.answeredQuestions.includes(questionId)) {
             return res.status(400).json({ message: 'Question already answered.' });
         }
@@ -39,16 +36,14 @@ exports.submitAnswer = async (req, res) => {
         let isCorrect = question.correctAnswer === answer;
         let correctCount = user.correctCount || 0;
         let checkpointIndex = user.checkpointIndex || 0;
-        let score = user.score || 0; // Adiciona score
+        let score = user.score || 0; 
 
         if (isCorrect) {
             correctCount += 1;
-            score += 10; // Incrementa score a cada resposta correta (ajuste o valor se quiser)
-            // Atualiza checkpoint se necessário
+            score += 10;
             if (CHECKPOINTS.includes(correctCount)) {
                 checkpointIndex = CHECKPOINTS.indexOf(correctCount);
             }
-            // Se chegou ao final
             if (correctCount >= PROGRESSAO.length - 1) {
                 user.prize = PROGRESSAO[PROGRESSAO.length - 1];
                 user.score = score;
@@ -56,22 +51,20 @@ exports.submitAnswer = async (req, res) => {
                 return res.json({ message: 'Parabéns! Você ganhou 1 milhão!', prize: user.prize, finished: true, score: user.score });
             }
         } else {
-            // Errou, recebe valor do último checkpoint
+
             user.prize = PROGRESSAO[CHECKPOINTS[checkpointIndex]];
             user.correctCount = 0;
             user.checkpointIndex = 0;
             user.answeredQuestions = [];
-            user.score = score; // Salva score atual
+            user.score = score;
             await user.save();
             return res.json({ message: 'Resposta errada!', prize: user.prize, finished: true, score: user.score });
         }
-
-        // Atualiza usuário
         user.answeredQuestions.push(questionId);
         user.correctCount = correctCount;
         user.checkpointIndex = checkpointIndex;
         user.prize = PROGRESSAO[correctCount];
-        user.score = score; // Salva score atualizado
+        user.score = score; 
         await user.save();
 
         res.json({
@@ -79,7 +72,7 @@ exports.submitAnswer = async (req, res) => {
             prize: user.prize,
             checkpoint: CHECKPOINTS[checkpointIndex],
             finished: false,
-            score: user.score // Retorna score
+            score: user.score 
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

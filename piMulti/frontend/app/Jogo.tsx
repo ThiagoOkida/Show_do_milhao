@@ -28,7 +28,6 @@ function getLastCheckpoint(idx: number) {
   return last;
 }
 
-// --- FUNÇÃO para atualizar score do usuário no banco ---
 async function atualizarPontuacao(score: number) {
   try {
     const token = localStorage.getItem("token");
@@ -74,7 +73,6 @@ export default function Jogo() {
   const [alternativasVisiveis, setAlternativasVisiveis] = useState<string[]>([]);
   const [alternativasEliminadas, setAlternativasEliminadas] = useState<string[]>([]);
 
-  // Dicas restantes
   const [pulosRestantes, setPulosRestantes] = useState(2);
   const [cartasRestantes, setCartasRestantes] = useState(1);
 
@@ -92,18 +90,16 @@ export default function Jogo() {
   useEffect(() => {
     if (alternativasFixas[indice]) {
       setAlternativasVisiveis(alternativasFixas[indice]);
-      setAlternativasEliminadas([]); // limpa eliminadas ao trocar de pergunta
+      setAlternativasEliminadas([]); 
     }
   }, [indice, alternativasFixas]);
 
-  // Atualiza o score do jogador ao finalizar
   useEffect(() => {
     if (showResult) {
       console.log('DEBUG: useEffect chamado após finalizar quiz!');
       const premioFinal = errou ? PROGRESSAO[getLastCheckpoint(indice)] : PROGRESSAO[indice];
       atualizarPontuacao(premioFinal);
     }
-    // eslint-disable-next-line
   }, [showResult]);
 
   if (!listaPerguntas.length) {
@@ -121,7 +117,6 @@ export default function Jogo() {
   const idxCheckpoint = getLastCheckpoint(indice);
   const premioCheckpoint = PROGRESSAO[idxCheckpoint];
 
-  // Última pergunta?
   const isUltimaPergunta = indice === listaPerguntas.length - 1;
 
   function handleResponder(alternativa: string) {
@@ -150,15 +145,14 @@ export default function Jogo() {
 
   function handlePular() {
     if (respostaSelecionada !== null) return;
-    if (isUltimaPergunta) return; // Não pode pular na última
-    if (pulosRestantes <= 0) return;
+    if (isUltimaPergunta) return;
     setPulosRestantes(pulosRestantes - 1);
     handleProxima();
   }
 
   function handleCartas() {
     if (respostaSelecionada !== null) return;
-    if (isUltimaPergunta) return; // Não pode usar na última
+    if (isUltimaPergunta) return;
     if (cartasRestantes <= 0) return;
     const incorretas = alternativas.filter(
       (alt) =>
@@ -237,7 +231,7 @@ export default function Jogo() {
                 let backgroundColor = "#E5E5E5";
                 let disabled = false;
                 if (alternativasEliminadas.includes(alt)) {
-                  backgroundColor = "#FF5C5C"; // Eliminada (cartas)
+                  backgroundColor = "#FF5C5C"; 
                   disabled = true;
                 } else if (respostaSelecionada) {
                   if (alt === respostaSelecionada) {
@@ -261,7 +255,7 @@ export default function Jogo() {
                   </TouchableOpacity>
                 );
               }
-              // Slot vazio para manter layout
+
               return (
                 <View key={"vazio_" + i} style={styles.alternativaVazia} />
               );

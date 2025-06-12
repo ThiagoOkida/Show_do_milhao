@@ -39,7 +39,7 @@ export default function RemoverPergunta() {
       });
       const result = await response.json();
       Alert.alert('Sucesso', result.message || 'Pergunta removida com sucesso');
-      fetchPerguntas(); // Atualiza lista após deletar
+      fetchPerguntas();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível remover a pergunta.');
       console.error('Erro ao deletar:', error);
